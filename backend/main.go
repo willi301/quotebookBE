@@ -1,66 +1,31 @@
 package main
 
 import (
-	"backend/backend/dto"
-	"backend/backend/fetcher"
-	"encoding/json"
-	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
-	"os"
+	"time"
+
+	"backend/handler"
 )
 
 func main() {
-	fmt.Println("Starting data update...")
+	rand.Seed(time.Now().UnixNano())
 
-	fetcher.UpdateQuizData()
-
-	fmt.Println("Done!")
-
+	//create router
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
-	})
+	//Register routes
+	mux.HandleFunc("/api/quiz/start", handler.StartQuiz)
+	// mux.HandleFunc("/api/quiz/answer", handlers.SubmitAnswer)
+	// mux.HandleFunc("/api/quiz/finish", handlers.FinishQuiz)
 
-	mux.HandleFunc("/api/hello", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{"message":"Hello from Go!"}`)
-	})
+	// // (optional health check)
+	// mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Write([]byte("ok"))
+	// })
 
-	mux.HandleFunc("/api/json", func(w http.ResponseWriter, r *http.Request) {
-		// Open the questions.json file
-		jsonFile, err := os.Open("questions.json")
-		if err != nil {
-			http.Error(w, "failed to open questions.json", http.StatusInternalServerError)
-			log.Println("error opening questions.json:", err)
-			return
-		}
-		defer jsonFile.Close()
-
-		var qs dto.QuestionList
-		// Creates decoder
-		dec := json.NewDecoder(jsonFile)
-		// Decode JSON data
-		if err := dec.Decode(&qs); err != nil {
-			http.Error(w, "failed to decode questions.json", http.StatusInternalServerError)
-			log.Println("error decoding questions.json:", err)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(qs); err != nil {
-			log.Println("error encoding response:", err)
-		}
-	})
-
-	server := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
-	}
-
+	// 4️⃣ Start server
 	log.Println("Server running on http://localhost:8080")
-	log.Fatal(server.ListenAndServe())
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }
