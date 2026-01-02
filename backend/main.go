@@ -1,6 +1,8 @@
 package main
 
 import (
+	"backend/backend/dto"
+	"backend/backend/fetcher"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,19 +10,13 @@ import (
 	"os"
 )
 
-
-type Question struct {
-	ID       int    `json:"id"`
-	Question string `json:"question"`
-	Answer   string `json:"answer"`
-}
-
-type Questions struct {
-	Questions []Question `json:"questions"`
-}
-
-
 func main() {
+	fmt.Println("Starting data update...")
+
+	fetcher.UpdateQuizData()
+
+	fmt.Println("Done!")
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +39,7 @@ func main() {
 		}
 		defer jsonFile.Close()
 
-		var qs Questions
+		var qs dto.QuestionList
 		// Creates decoder
 		dec := json.NewDecoder(jsonFile)
 		// Decode JSON data
