@@ -3,8 +3,10 @@ package fetcher
 import (
 	"backend/backend/dto"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"google.golang.org/api/option"
@@ -57,11 +59,13 @@ func UpdateQuizData() {
 		})
 	}
 
-	fmt.Println("\n--- 🔍 PREVIEW DATA ---")
-	for _, item := range questionList.Questions {
-		fmt.Printf("ID: %d | Q: %s | A: %s | C: %s\n", item.ID, item.Question, item.Answer, item.Context)
+	file, _ := json.MarshalIndent(questionList, "", "  ")
+
+	err = os.WriteFile("quiz_data.json", file, 0644)
+
+	if err != nil {
+		log.Fatalf("Error writing file: %v", err)
 	}
-	fmt.Println("-----------------------")
 
 	fmt.Println("✅ Data updated inside fetcher package")
 }
