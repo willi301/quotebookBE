@@ -7,25 +7,24 @@ import (
 	"time"
 
 	"backend/handler"
+	"backend/store"
 )
 
 func main() {
+	// Seed random ONCE
 	rand.Seed(time.Now().UnixNano())
 
-	//create router
+	// Load quiz data ONCE
+	qs, err := store.LoadQuestions("quiz_data.json")
+	if err != nil {
+		log.Fatal("failed to load questions:", err)
+	}
+	store.Questions = qs
+
+	// Setup router
 	mux := http.NewServeMux()
-
-	//Register routes
 	mux.HandleFunc("/api/quiz/start", handler.StartQuiz)
-	// mux.HandleFunc("/api/quiz/answer", handlers.SubmitAnswer)
-	// mux.HandleFunc("/api/quiz/finish", handlers.FinishQuiz)
 
-	// // (optional health check)
-	// mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Write([]byte("ok"))
-	// })
-
-	// 4️⃣ Start server
-	log.Println("Server running on http://localhost:8080")
+	log.Println("Server running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"log"
 	"math/rand"
 	"net/http"
 	"time"
@@ -12,57 +11,49 @@ import (
 
 // StartQuiz initializes a new quiz session
 func StartQuiz(w http.ResponseWriter, r *http.Request) {
-	// making sure the request method will be post
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Generate session ID
 	sessionID := generateSessionID()
-	
-	// Create a copy of questions and randomize them
-	shuffledQuestions := make([]models.Question, len(questions))
-	copy(shuffledQuestions, questions)
-	
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(shuffledQuestions), func(i, j int) {
-		shuffledQuestions[i], shuffledQuestions[j] = shuffledQuestions[j], shuffledQuestions[i]
+
+	// Copy questions from store (DO NOT mutate)
+	shuffled := make([]models.Question, len(store.Questions))
+	copy(shuffled, store.Questions)
+
+	// Shuffle
+	rand.Shuffle(len(shuffled), func(i, j int) {
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
-	
-	// Create new quiz session with shuffled questions
+
+	// Create session
 	session := &models.QuizSession{
 		ID:        sessionID,
-		Questions: shuffledQuestions,
+		Questions: shuffled,
 		Score:     0,
-		StartedAt: time.Now(),
 	}
-	
-	// Store session in centralized store
+
+	// Save session
 	store.Mu.Lock()
 	store.Sessions[sessionID] = session
-	userAnswers[sessionID] = make(map[int]string)
 	store.Mu.Unlock()
-	
-	// Convert to public questions (without answers)
-	publicQuestions := make([]models.PublicQuestion, len(questions))
-	for i, q := range questions {
-		publicQuestions[i] = models.PublicQuestion{
+
+	// Create public questions
+	public := make([]models.PublicQuestion, len(shuffled))
+	for i, q := range shuffled {
+		public[i] = models.PublicQuestion{
 			ID:   q.ID,
 			Text: q.Text,
 		}
 	}
-	
-	response := map[string]interface{}{
-		"session_id": sessionID,
-		"questions":  publicQuestions,
-		"message":    "Quiz started successfully",
-	}
-	
+
+	// Respond
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-	
-	log.Printf("Started quiz session: %s", sessionID)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"session_id": sessionID,
+		"questions":  public,
+	})
 }
 
 
