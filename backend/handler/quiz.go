@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
+	"strings"
 	"backend/models"
 	"backend/store"
 )
@@ -54,6 +55,30 @@ func StartQuiz(w http.ResponseWriter, r *http.Request) {
 		"session_id": sessionID,
 		"questions":  public,
 	})
+}
+
+// to check whether the answer is correct
+func CheckAnswer(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req models.AnswerRequest
+	json.NewDecoder(r.Body).Decode(&req)
+
+	for _, q := range store.Questions {
+		if q.ID == req.QuestionID {
+			isCorrect := strings.EqualFold(req.Answer, q.Answer)
+			json.NewEncoder(w).Encode(map[string]bool{
+				"correct": isCorrect,
+			})
+			return
+		}
+	}
+
+	http.Error(w, "Question not found", http.StatusNotFound)
 }
 
 
