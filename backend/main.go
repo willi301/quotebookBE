@@ -24,6 +24,7 @@ func main() {
 	// Setup router
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/quiz/start", handler.StartQuiz)
+	mux.HandleFunc("/api/quiz/answer", handler.CheckAnswer)
 
 	log.Println("Server running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
