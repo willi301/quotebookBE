@@ -1,13 +1,13 @@
 package handler
 
 import (
+	"backend/models"
+	"backend/store"
 	"encoding/json"
 	"math/rand"
 	"net/http"
-	"time"
 	"strings"
-	"backend/models"
-	"backend/store"
+	"time"
 )
 
 // StartQuiz initializes a new quiz session
@@ -80,7 +80,6 @@ func CheckAnswer(w http.ResponseWriter, r *http.Request) {
 
 	http.Error(w, "Question not found", http.StatusNotFound)
 }
-
 
 // to randomly generate a session ID
 func generateSessionID() string {
