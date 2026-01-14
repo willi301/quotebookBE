@@ -4,20 +4,29 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/http"
-	"time"
 	"strings"
+	"backend/fetcher"
 	"backend/models"
 	"backend/store"
 )
 
-// StartQuiz initializes a new quiz session
+// StartQuiz initializes a new quiz
 func StartQuiz(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	sessionID := generateSessionID()
+	// Update quiz data from Google Sheets and reload questions
+	fetcher.UpdateQuizData()
+	qs, err := store.LoadQuestions("quiz_data.json")
+	if err != nil {
+		http.Error(w, "Failed to load questions", http.StatusInternalServerError)
+		return
+	}
+	store.Mu.Lock()
+	store.Questions = qs
+	store.Mu.Unlock()
 
 	// Copy questions from store (DO NOT mutate)
 	shuffled := make([]models.Question, len(store.Questions))
@@ -27,18 +36,6 @@ func StartQuiz(w http.ResponseWriter, r *http.Request) {
 	rand.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
-
-	// Create session
-	session := &models.QuizSession{
-		ID:        sessionID,
-		Questions: shuffled,
-		Score:     0,
-	}
-
-	// Save session
-	store.Mu.Lock()
-	store.Sessions[sessionID] = session
-	store.Mu.Unlock()
 
 	// Create public questions
 	public := make([]models.PublicQuestion, len(shuffled))
@@ -52,8 +49,7 @@ func StartQuiz(w http.ResponseWriter, r *http.Request) {
 	// Respond
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"session_id": sessionID,
-		"questions":  public,
+		"questions": public,
 	})
 }
 
@@ -79,16 +75,4 @@ func CheckAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "Question not found", http.StatusNotFound)
-}
-
-
-// to randomly generate a session ID
-func generateSessionID() string {
-	rand.Seed(time.Now().UnixNano())
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, 16)
-	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
-	}
-	return string(b)
 }

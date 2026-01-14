@@ -8,6 +8,5 @@ import (
 
 var (
 	Questions []models.Question
-	Sessions  = make(map[string]*models.QuizSession)
 	Mu        sync.Mutex
 )

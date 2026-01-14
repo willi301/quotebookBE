@@ -1,7 +1,7 @@
 package fetcher
 
 import (
-	"backend/backend/dto"
+	"backend/dto"
 	"context"
 	"encoding/json"
 	"fmt"
