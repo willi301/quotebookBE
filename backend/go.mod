@@ -1,8 +1,8 @@
 module backend
 
-go 1.22
+go 1.24.0
 
-require google.golang.org/api v0.258.0
+require google.golang.org/api v0.239.0
 
 require (
 	cloud.google.com/go/auth v0.17.0 // indirect
