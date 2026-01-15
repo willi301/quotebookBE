@@ -13,18 +13,18 @@ import (
 	"google.golang.org/api/sheets/v4"
 )
 
-type Question struct {
+type quizQuestion struct {
 	ID       int    `json:"id"`
 	Question string `json:"question"`
 	Answer   string `json:"answer"`
 	Context  string `json:"context"`
 }
 
-type QuestionList struct {
-	Questions []Question `json:"questions"`
+type quizQuestionList struct {
+	Questions []quizQuestion `json:"questions"`
 }
 
-type PublicQuestion struct {
+type publicQuestion struct {
 	ID      int    `json:"id"`
 	Text    string `json:"text"`
 	Context string `json:"context,omitempty"`
@@ -46,7 +46,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := fetchQuizData(r.Context())
+	data, err := fetchQuizQuizData(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to load quiz: "+err.Error(), 500)
 		return
@@ -56,9 +56,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		data.Questions[i], data.Questions[j] = data.Questions[j], data.Questions[i]
 	})
 
-	public := make([]PublicQuestion, len(data.Questions))
+	public := make([]publicQuestion, len(data.Questions))
 	for i, q := range data.Questions {
-		public[i] = PublicQuestion{
+		public[i] = publicQuestion{
 			ID:      q.ID,
 			Text:    q.Question,
 			Context: q.Context,
@@ -68,7 +68,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(public)
 }
 
-func fetchQuizData(ctx context.Context) (*QuestionList, error) {
+func fetchQuizQuizData(ctx context.Context) (*quizQuestionList, error) {
 	credsJSON := os.Getenv("GOOGLE_CREDENTIALS")
 	if credsJSON == "" {
 		return nil, fmt.Errorf("GOOGLE_CREDENTIALS not set")
@@ -89,7 +89,7 @@ func fetchQuizData(ctx context.Context) (*QuestionList, error) {
 		return nil, fmt.Errorf("failed to fetch sheet data: %w", err)
 	}
 
-	var questionList QuestionList
+	var questionList quizQuestionList
 
 	for i, row := range resp.Values {
 		if i == 0 || len(row) < 2 {
@@ -108,7 +108,7 @@ func fetchQuizData(ctx context.Context) (*QuestionList, error) {
 			continue
 		}
 
-		questionList.Questions = append(questionList.Questions, Question{
+		questionList.Questions = append(questionList.Questions, quizQuestion{
 			ID:       i,
 			Question: question,
 			Answer:   answer,

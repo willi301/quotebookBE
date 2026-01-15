@@ -12,18 +12,18 @@ import (
 	"google.golang.org/api/sheets/v4"
 )
 
-type Question struct {
+type answerQuestion struct {
 	ID       int    `json:"id"`
 	Question string `json:"question"`
 	Answer   string `json:"answer"`
 	Context  string `json:"context"`
 }
 
-type QuestionList struct {
-	Questions []Question `json:"questions"`
+type answerQuestionList struct {
+	Questions []answerQuestion `json:"questions"`
 }
 
-type AnswerRequest struct {
+type answerRequest struct {
 	QuestionID int    `json:"question_id"`
 	Answer     string `json:"answer"`
 }
@@ -44,13 +44,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req AnswerRequest
+	var req answerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", 400)
 		return
 	}
 
-	data, err := fetchQuizData(r.Context())
+	data, err := fetchAnswerQuizData(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to load quiz data: "+err.Error(), 500)
 		return
@@ -68,7 +68,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Question not found", 404)
 }
 
-func fetchQuizData(ctx context.Context) (*QuestionList, error) {
+func fetchAnswerQuizData(ctx context.Context) (*answerQuestionList, error) {
 	credsJSON := os.Getenv("GOOGLE_CREDENTIALS")
 	if credsJSON == "" {
 		return nil, fmt.Errorf("GOOGLE_CREDENTIALS not set")
@@ -89,7 +89,7 @@ func fetchQuizData(ctx context.Context) (*QuestionList, error) {
 		return nil, fmt.Errorf("failed to fetch sheet data: %w", err)
 	}
 
-	var questionList QuestionList
+	var questionList answerQuestionList
 
 	for i, row := range resp.Values {
 		if i == 0 || len(row) < 2 {
@@ -108,7 +108,7 @@ func fetchQuizData(ctx context.Context) (*QuestionList, error) {
 			continue
 		}
 
-		questionList.Questions = append(questionList.Questions, Question{
+		questionList.Questions = append(questionList.Questions, answerQuestion{
 			ID:       i,
 			Question: question,
 			Answer:   answer,
