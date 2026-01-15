@@ -4,33 +4,43 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/http"
-	// "time"
-
-	"models"
+)
 
 func Handler(w http.ResponseWriter, r *http.Request) {
+	// CORS headers
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", 405)
 		return
 	}
 
-	data, err := fetcher.FetchQuizData(r.Context())
+	data, err := FetchQuizData(r.Context())
 	if err != nil {
-		http.Error(w, "Failed to load quiz", 500)
+		http.Error(w, "Failed to load quiz: "+err.Error(), 500)
 		return
 	}
 
-	// shuffle
+	// Shuffle questions
 	rand.Shuffle(len(data.Questions), func(i, j int) {
 		data.Questions[i], data.Questions[j] = data.Questions[j], data.Questions[i]
 	})
 
-	// strip answers
-	public := make([]models.PublicQuestion, len(data.Questions))
+	// Strip answers - only send questions to client
+	public := make([]PublicQuestion, len(data.Questions))
 	for i, q := range data.Questions {
-		public[i] = models.PublicQuestion{
-			ID:   q.ID,
-			Text: q.Question,
+		public[i] = PublicQuestion{
+			ID:      q.ID,
+			Text:    q.Question,
+			Context: q.Context,
 		}
 	}
 

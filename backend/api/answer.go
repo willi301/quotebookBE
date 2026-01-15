@@ -4,20 +4,36 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
-
-	"models"
 )
 
-type AnswerRequest struct {
-	QuestionID int    `json:"question_id"`
-	Answer     string `json:"answer"`
-}
-
 func Handler(w http.ResponseWriter, r *http.Request) {
-	var req AnswerRequest
-	json.NewDecoder(r.Body).Decode(&req)
+	// CORS headers
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	data, _ := fetcher.FetchQuizData(r.Context())
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", 405)
+		return
+	}
+
+	var req AnswerRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", 400)
+		return
+	}
+
+	data, err := FetchQuizData(r.Context())
+	if err != nil {
+		http.Error(w, "Failed to load quiz data: "+err.Error(), 500)
+		return
+	}
 
 	for _, q := range data.Questions {
 		if q.ID == req.QuestionID {
