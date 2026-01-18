@@ -28,6 +28,11 @@ type answerRequest struct {
 	Answer     string `json:"answer"`
 }
 
+type answerResponse struct {
+	Correct       bool   `json:"correct"`
+	CorrectAnswer string `json:"correct_answer"`
+}
+
 func Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -58,9 +63,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	for _, q := range data.Questions {
 		if q.ID == req.QuestionID {
-			json.NewEncoder(w).Encode(map[string]bool{
-				"correct": strings.EqualFold(q.Answer, req.Answer),
-			})
+			isCorrect := strings.EqualFold(q.Answer, req.Answer)
+			
+			response := answerResponse{
+				Correct:       isCorrect,
+				CorrectAnswer: q.Answer,
+			}
+			
+			json.NewEncoder(w).Encode(response)
 			return
 		}
 	}
